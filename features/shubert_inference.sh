@@ -27,7 +27,7 @@ fairseq_root=SHuBERT/fairseq
 # Ensure fairseq_root is in PYTHONPATH
 export PYTHONPATH=\$PYTHONPATH:\$fairseq_root
 
-python shubert_features.py \\
+python shubert_inference.py \\
     --index "$i" \\
     --csv_path /path/to/csv/file/csv_file.csv \\
     --checkpoint_path /path/to/checkpoint/file/checkpoint_file.pt \\
