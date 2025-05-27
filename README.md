@@ -24,7 +24,7 @@ We describe how to prepare the datasets in [DATASETS.md](DATASETS.md).
 
 #### 2. Model Weights
 
-Please download the weight of SHuBERT(Base) [link](TODO).
+Please download the weight of SHuBERT(Base) [link](https://drive.google.com/drive/folders/1aOZEkENp2B-5sRq5F67dYsirnHwsFjKV?usp=sharing).
 
 #### 3. Feature Extraction
 
