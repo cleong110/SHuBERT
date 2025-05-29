@@ -7,6 +7,7 @@ for i in {0..255}; do
 #SBATCH --job-name=kpe_$i
 #SBATCH --dependency=singleton
 #SBATCH --partition=
+#SBATCH -G1
 #SBATCH --cpus-per-task=1
 #SBATCH --output=/path_to_output_logs_dir/slurm_%x.out
 

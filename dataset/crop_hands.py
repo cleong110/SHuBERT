@@ -186,16 +186,16 @@ def video_holistic(video_file, hand_path, problem_file_path, pose_path):
     video = decord.VideoReader(video_file)
     fps = video.get_avg_fps()
 
-    clip_hand1_path = f"{hand_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_hand1.mp4"
-    clip_hand2_path = f"{hand_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_hand2.mp4"
-    landmark_json_path = Path(f"{pose_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
+    clip_hand1_path = Path(hand_path) / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_hand1.mp4")
+    clip_hand2_path = Path(hand_path) / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_hand2.mp4")
+    landmark_json_path = Path(pose_path) / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
     
 
     if os.path.exists(clip_hand1_path):
         os.remove(clip_hand1_path)
     if os.path.exists(clip_hand2_path):
         os.remove(clip_hand2_path)
-        
+    
 
 
     fourcc_hand1 = cv2.VideoWriter_fourcc(*'mp4v')
@@ -316,6 +316,10 @@ if __name__ == "__main__":
     problem_file_path = args.problem_file_path
     pose_path = args.pose_path
     hand_path = args.hand_path
+
+    # Create directories if they do not exist
+    Path(hand_path).mkdir(parents=True, exist_ok=True)
+
     
     fixed_list = load_file(files_list)
 
@@ -333,9 +337,9 @@ if __name__ == "__main__":
             print("Time limit reached. Stopping execution.")
             break
   
-        clip_hand2_path = f"{hand_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_hand2.mp4"
+        clip_hand2_path = Path(hand_path) / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_hand2.mp4")
         
-        if clip_hand2_path.exists():        
+        if Path(clip_hand2_path).exists():        
             continue
         elif is_string_in_file(problem_file_path, video_file):
             continue

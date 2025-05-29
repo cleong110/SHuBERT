@@ -241,9 +241,11 @@ def video_holistic(video_file, face_path, problem_file_path, pose_path):
 
     fps = video.get_avg_fps()
 
-    clip_face_path = f"{face_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_face.mp4"
-    landmark_json_path = Path(f"{pose_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
-    
+    clip_face_path = Path(face_path) / f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_face.mp4"
+    landmark_json_path = Path(pose_path) / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
+
+    #Make parent directories for clip_face_path if they do not exist
+    clip_face_path.parent.mkdir(parents=True, exist_ok=True)
     # remove the files if they already exist
     if os.path.exists(clip_face_path):
         os.remove(clip_face_path)
@@ -340,11 +342,13 @@ if __name__ == "__main__":
             print("Time limit reached. Stopping execution.")
             break
         
-        clip_face_path = f"{face_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_face.mp4"
+        clip_face_path = Path(face_path) / f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_face.mp4"
         
         if os.path.exists(clip_face_path):
+            print(f"File {clip_face_path} already exists. Skipping.")
             continue
         elif is_string_in_file(problem_file_path, video_file):
+            print(f"File {video_file} is in the problem file. Skipping.")
             continue
         else:
             try:

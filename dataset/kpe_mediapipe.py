@@ -13,6 +13,7 @@ import argparse
 import json
 import csv
 import time
+from pdb import set_trace as st
 
 
 def compute_stats_from_pose_data(pose_path, stats_path, video_file):
@@ -148,8 +149,8 @@ def video_holistic(video_file, problem_file_path, pose_path, stats_path):
     stats = {}
     fps = video.get_avg_fps()
 
-    landmark_json_path = Path(f"{pose_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
-    stats_json_path = Path(f"{stats_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_stats.json")
+    landmark_json_path = pose_path / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
+    stats_json_path = stats_path / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_stats.json")
     
     for i in range(len(video)):        
         try:
@@ -206,6 +207,8 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
+    global face_detector, hand_detector, mp_holistic
+
     # Initialize face and hand landmarker models
     base_options_face = python.BaseOptions(model_asset_path=face_model_path)
     options_face = vision.FaceLandmarkerOptions(base_options=base_options_face,
@@ -224,7 +227,7 @@ if __name__ == "__main__":
     mp_holistic = mp.solutions.holistic.Holistic(min_detection_confidence=0.1)
 
 
-    global face_detector, hand_detector, mp_holistic
+   
 
 
 
@@ -247,8 +250,8 @@ if __name__ == "__main__":
             print("Time limit reached. Stopping execution.")
             break
         
-        landmark_json_path = Path(f"{pose_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
-        stats_json_path = Path(f"{stats_path}{video_file.split('/')[-1].rsplit('.', 1)[0]}_stats.json")
+        landmark_json_path = pose_path / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_pose.json")
+        stats_json_path = stats_path / Path(f"{video_file.split('/')[-1].rsplit('.', 1)[0]}_stats.json")
        
         if Path(landmark_json_path).exists() and Path(stats_json_path).exists():
             continue

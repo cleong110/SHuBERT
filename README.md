@@ -14,7 +14,7 @@ We introduce SHuBERT (Sign Hidden-Unit BERT), a self-supervised contextual repre
 
 ### Installation
 
-We provide installation instructions in [INSTALL.md](INSTALL.md).
+We provide installation and inference instructions in [QUICKSTART.md](QUICKSTART.md).
 
 ### Usage
 #### 1. Preparing the data
@@ -28,7 +28,7 @@ Please download the weight of SHuBERT(Base) [link](https://drive.google.com/driv
 
 #### 3. Feature Extraction
 
-We describe how to extract features from the pretrained model in [FEATURE_EXTRACTION.md](FEATURE_EXTRACTION.md).
+We describe how to extract features from the pretrained model in [FEATURES.md](FEATURES.md).
 
 
 #### 4. Pretraining

@@ -248,8 +248,8 @@ if __name__ == "__main__":
                         help='index of the sub_list to work with')
     parser.add_argument('--batch_size', type=int, required=True,
                         help='batch size')
-    parser.add_argument('--time_limit', type=int, required=False,
-                        help='time limit in seconds')
+    # parser.add_argument('--time_limit', type=int, required=False,
+    #                     help='time limit in seconds')
     parser.add_argument('--files_list', type=str, required=True,
                         help='path to the files list')
     parser.add_argument('--output_clips_directory', type=str, required=True,
@@ -263,7 +263,7 @@ if __name__ == "__main__":
     
     index = args.index
     batch_size = args.batch_size
-    time_limit = args.time_limit
+    # time_limit = args.time_limit
     files_list = args.files_list
     output_clips_directory = args.output_clips_directory
     problem_file_path = args.problem_file_path
@@ -281,9 +281,9 @@ if __name__ == "__main__":
         Path(output_path).mkdir(parents=True, exist_ok=True)
         
         current_time = time.time()
-        if current_time - start_time > time_limit:
-            print("Time limit of 7 hours and 40 minutes reached. Stopping execution.")
-            break    
+        # if current_time - start_time > time_limit:
+        #     print("Time limit of 7 hours and 40 minutes reached. Stopping execution.")
+        #     break    
 
 
         if os.path.exists(crop_clip_path):

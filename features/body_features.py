@@ -126,15 +126,16 @@ def keypoints_to_numpy(pose_file, pose_emb_path):
     
     # fill the left wrist and right wrist with -9999. in the last 4 elements of the vector
     video_pose_landmarks[:,:2] = -9999.0    
-    
-    np.save(f"{pose_emb_path}{pose_file.split('/')[-1].rsplit('.', 1)[0]}.npy", video_pose_landmarks)
+    np_path = Path(pose_emb_path) / Path(f"{str(pose_file).split('/')[-1].rsplit('.', 1)[0]}.npy")
+    np_path.parent.mkdir(parents=True, exist_ok=True)
+    np.save(np_path, video_pose_landmarks)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--index', type=int, required=True,
                         help='index of the sub_list to work with')
-    parser.add_argument('--pose_path', type=str, required=True,
+    parser.add_argument('--files_list', type=str, required=True,
                         help='path to the pose file')
     parser.add_argument('--pose_features_path', type=str, required=True,
                         help='path to the pose features file')
@@ -150,21 +151,21 @@ if __name__ == "__main__":
     
     index = args.index
 
-    fixed_list = load_file(args.pose_path)
-    pose_path = args.pose_path
+    fixed_list = load_file(args.files_list)
+    files_list = args.files_list
     pose_emb_path = args.pose_features_path
     batch_size = args.batch_size    
     time_limit = args.time_limit
 
     video_batches = [fixed_list[i:i + batch_size] for i in range(0, len(fixed_list), batch_size)]
     for pose_file in video_batches[index]:
-        pose_file = pose_path + pose_file.split('/')[-1].rsplit('.', 1)[0] + "_pose.json"
-        np_path = f"{pose_emb_path}{pose_file.split('/')[-1].rsplit('.', 1)[0]}.npy"
+        pose_file = Path(pose_file)# / Path(pose_file.split('/')[-1].rsplit('.', 1)[0] + "_pose.json")
+        np_path = Path(pose_emb_path) / Path(f"{str(pose_file).split('/')[-1].rsplit('.', 1)[0]}.npy")
         if os.path.exists(np_path):
             continue
         current_time = time.time()
         if current_time - start_time > time_limit:
             print("Time limit reached. Stopping execution.")
             break
-        print(pose_file)
+        # print(pose_file)
         keypoints_to_numpy(pose_file, pose_emb_path)

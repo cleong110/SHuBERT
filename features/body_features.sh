@@ -7,6 +7,7 @@ for i in {0..255}; do
 #SBATCH --job-name=bodyfeatures_$i
 #SBATCH --dependency=singleton
 #SBATCH --partition=
+#SBATCH -G1
 #SBATCH --cpus-per-task=1
 #SBATCH --output=/path_to_output_logs_dir/slurm_%x.out
 
@@ -19,7 +20,6 @@ conda activate \$env_name
 
 python body_features.py --index "$i" \
                           --batch_size 50 \
-                          --files_list /path/to/files/list/file/files_list.list \
                           --pose_path /path/to/pose/file/directory/ \
                           --pose_features_path /path/to/pose/features/file/directory/ \
                           --time_limit 257890

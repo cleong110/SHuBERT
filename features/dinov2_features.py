@@ -53,7 +53,7 @@ def is_string_in_file(file_path, target_string):
         return False
 
 
-def get_dino_finetuned_downloaded():
+def get_dino_finetuned_downloaded(dino_path):
     # Load the original DINOv2 model with the correct architecture and parameters.
     model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg', pretrained=False)  # Removed map_location
     # Load finetuned weights
@@ -75,7 +75,6 @@ def get_dino_finetuned_downloaded():
     model.to(device)
     return model
 
-model = get_dino_finetuned_downloaded()
 
 def preprocess_image(image):
     #Preprocess the image
@@ -155,15 +154,17 @@ if __name__ == "__main__":
     files_list = args.files_list
     output_folder = args.output_folder
     fixed_list = load_file(files_list)    
+    global dino_path
     dino_path = args.dino_path
     
-    global dino_path
     
     video_batches = [fixed_list[i:i + batch_size_in] for i in range(0, len(fixed_list), batch_size_in)]
+    print(f"Total number of video batches: {len(video_batches)}")
     
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
- 
+    model = get_dino_finetuned_downloaded(dino_path)
+    
     for video_path in video_batches[index]:
         clip_video_id = video_path.split('/')[-1].split('.')[0] 
         
@@ -173,7 +174,7 @@ if __name__ == "__main__":
             break
         
         video_name = os.path.splitext(os.path.basename(video_path))[0]
-        np_path = f"{output_folder}/{video_name}.npy"             
+        np_path = f"{output_folder}/{video_name}.npy"   
            
         if os.path.exists(np_path):
             continue

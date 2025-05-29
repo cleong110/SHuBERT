@@ -6,3 +6,5 @@ outputs/
 features/shubert_inference_xiaodan_test.sh
 __pycache__/
 *.py[cod]
+*xiaodan*.*
+manifest_files/
