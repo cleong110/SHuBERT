@@ -18,6 +18,9 @@ env_name=
 source \${CONDA_ROOT}/etc/profile.d/conda.sh
 conda activate \$env_name
 
+# remember to download hand kpe model : wget https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker#models
+# remember to download face kpe model : wget https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker#models
+
 python kpe_mediapipe.py --index "$i" \
                           --batch_size 1 \
                           --pose_path /path/to/pose/file/folder/ \

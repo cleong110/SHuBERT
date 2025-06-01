@@ -1,5 +1,5 @@
 
-## SHuBERT: Self-Supervised Sign Language Representation Learning via Multi-Stream Cluster Prediction
+## SHuBERT: Self-Supervised Sign Language Representation Learning via Multi-Stream Cluster Prediction [ACL 2025]
 
 This repository contains research code for the paper [*SHuBERT: Self-Supervised Sign Language Representation Learning via Multi-Stream Cluster Prediction*](https://arxiv.org/abs/2411.16765).
 
@@ -24,7 +24,7 @@ We describe how to prepare the datasets in [DATASETS.md](DATASETS.md).
 
 #### 2. Model Weights
 
-Please download the weight of SHuBERT(Base) [link](https://drive.google.com/drive/folders/1aOZEkENp2B-5sRq5F67dYsirnHwsFjKV?usp=sharing).
+Please download the weight of SHuBERT (as well as the DINO Face and Hand) weights [link](https://drive.google.com/drive/folders/1aOZEkENp2B-5sRq5F67dYsirnHwsFjKV?usp=sharing).
 
 #### 3. Feature Extraction
 
@@ -57,7 +57,7 @@ If you find our work useful in your research, please consider citing:
 
 
 ### References
-This codebase is heavily influenced by the [Fairseq](https://github.com/facebookresearch/fairseq) and [DinoSR](https://github.com/Alexander-H-Liu/dinosr) repositories.
+This codebase is heavily influenced by the [DinoSR](https://github.com/Alexander-H-Liu/dinosr) and [Fairseq](https://github.com/facebookresearch/fairseq) repositories.
 
 ### License
 This project is primarily under the MIT license.

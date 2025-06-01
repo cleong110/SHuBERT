@@ -55,7 +55,7 @@ bash body_features.sh
 - `--files_list`: .list file of the pose files
 - `--pose_features_path` output folder
 
-We will use finetuned dinov2 models to extract face and hand features. You'll need to download them [here]()
+We will use finetuned dinov2 models to extract face and hand features. You'll need to download them [here](https://drive.google.com/drive/folders/1aOZEkENp2B-5sRq5F67dYsirnHwsFjKV?usp=sharing)
 ```bash
 python ../write_list.py #input_files_list: face crops
 conda env create -f environment_dino.yml
