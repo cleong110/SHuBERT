@@ -1,18 +1,6 @@
 import argparse
-import gzip
-import pickle
 from pathlib import Path
-
-
-def dump_file_list(input_dir: Path, output_file: Path) -> None:
-    """Collect absolute file paths from input_dir and write them as a pickled gzip list to output_file."""
-    input_files_list = [str(p.resolve()) for p in input_dir.iterdir() if p.is_file()]
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-
-    with gzip.open(output_file, "wb") as f:
-        pickle.dump(input_files_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-    print(f"Written {len(input_files_list)} file paths to {output_file}")
+from utils import dump_file_list
 
 
 def parse_args():
