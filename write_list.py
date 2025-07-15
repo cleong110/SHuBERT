@@ -28,13 +28,12 @@ def parse_args():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path.cwd(),
-        help="Path to the output directory to store clips_bbox.list.gz.",
+        # default=Path.cwd(),
+        help="Path to the output directory to store the .list.gz.",
     )
     parser.add_argument(
         "--output-filename",
         type=str,
-        default="clips_bbox.list.gz",
         help="Name of the output file (with .gz extension).",
     )
     return parser.parse_args()
@@ -44,8 +43,15 @@ def main():
     args = parse_args()
 
     input_dir: Path = args.input_dir
-    output_dir: Path = args.output_dir
-    output_file: Path = output_dir / args.output_filename
+    if args.output_dir is None:
+        output_dir = input_dir  # make it in the input dir
+    else:
+        output_dir = args.output_dir
+
+    if args.output_filename is None:
+        output_file = output_dir / f"{output_dir.name}.list.gz"
+    else:
+        output_file = output_dir / args.output_filename
 
     if not input_dir.exists():
         raise FileNotFoundError(f"Input directory '{input_dir}' does not exist.")

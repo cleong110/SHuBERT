@@ -2,181 +2,182 @@ import torch
 import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
-import decord
 from decord import VideoReader
-from decord import cpu, gpu
 import numpy as np
-import os
-import pickle
-import gzip
 from pathlib import Path
 import argparse
-import json
-import csv
-import glob
-import time 
+import time
+import sys
+from tqdm import tqdm
+
+# Dynamically add repo root to sys.path
+repo_root = Path(__file__).resolve().parent.parent
+assert (repo_root / "dataset" / "utils.py").exists(), "utils.py not found in dataset/"
+sys.path.insert(0, str(repo_root))
+
+from dataset.utils import load_file, dump_file_list  # noqa: E402
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 
-def get_mp4_files(directory):
-    # Ensure the directory exists
-    if not os.path.exists(directory):
-        raise FileNotFoundError(f'Directory not found: {directory}')
-
-    # Use glob to find all .mp4 files
-    mp4_files = glob.glob(os.path.join(directory, '*.mp4'))
-
-    # Convert to absolute paths
-    absolute_paths = [os.path.abspath(file) for file in mp4_files]
-
-    return absolute_paths
-
-
-def load_file(filename):
-    with gzip.open(filename, "rb") as f:
-        loaded_object = pickle.load(f)
-        return loaded_object
-
-
-def is_string_in_file(file_path, target_string):
-    try:
-        with Path(file_path).open("r") as f:
-            for line in f:
-                if target_string in line:
-                    return True
-        return False
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
-
-
-def get_dino_finetuned_downloaded(dino_path):
-    # Load the original DINOv2 model with the correct architecture and parameters.
-    model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg', pretrained=False)  # Removed map_location
-    # Load finetuned weights
+def get_dino_finetuned(dino_path: Path) -> torch.nn.Module:
+    model = torch.hub.load(
+        "facebookresearch/dinov2", "dinov2_vits14_reg", pretrained=False
+    )
     pretrained = torch.load(dino_path, map_location=device)
-    # Make correct state dict for loading
     new_state_dict = {}
-    for key, value in pretrained['teacher'].items():
-        if 'dino_head' in key:
-            print('not used')
-        else:
-            new_key = key.replace('backbone.', '')
-            new_state_dict[new_key] = value
-    # Change shape of pos_embed
-    pos_embed = nn.Parameter(torch.zeros(1, 257, 384))
-    model.pos_embed = pos_embed
-    # Load state dict
+    for key, value in pretrained["teacher"].items():
+        if "dino_head" not in key:
+            new_state_dict[key.replace("backbone.", "")] = value
+    model.pos_embed = nn.Parameter(torch.zeros(1, 257, 384))
     model.load_state_dict(new_state_dict, strict=True)
-    # Move model to GPU
     model.to(device)
+    model.eval()
     return model
 
 
-def preprocess_image(image):
-    #Preprocess the image
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),  # Resize to the input size expected by the model
-        transforms.ToTensor(),  # Convert to tensor
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize
-    ])
-    # image is a PIL Image
-    return transform(image).unsqueeze(0)  # Add batch dimension
-
-
-
-def preprocess_frame(frame):
-    """Preprocess a single frame"""
-    transform = transforms.Compose([
-        #transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+def preprocess_frame(frame: np.ndarray) -> torch.Tensor:
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
     image = Image.fromarray(frame)
-    return transform(image)[:3]  # Ensure only RGB channels are considered
+    return transform(image)[:3]
 
-def video_to_embeddings(video_path, output_folder, dino_path, batch_size=128):
-    #"""Extract frames from a video and compute embeddings in batches"""
+
+@torch.no_grad()
+def video_to_embeddings(
+    video_path: Path, output_path: Path, model: torch.nn.Module, batch_size: int = 128
+):
     try:
-        vr = VideoReader(video_path, width=224, height=224)
-    except:
-        print(f'path doesnt exist: {video_path}')
+        vr = VideoReader(str(video_path), width=224, height=224)
+    except Exception as e:
+        print(f"Failed to load {video_path}: {e}")
         return
+
     total_frames = len(vr)
-    all_embeddings = []
+    embeddings = []
 
     for idx in range(0, total_frames, batch_size):
-        batch_frames = vr.get_batch(range(idx, min(idx + batch_size, total_frames))).asnumpy()
-        
-        # Preprocess and stack frames to form a batch
-        batch_tensors = torch.stack([preprocess_frame(frame) for frame in batch_frames]).cuda()
+        frames = vr.get_batch(range(idx, min(idx + batch_size, total_frames))).asnumpy()
+        batch = torch.stack([preprocess_frame(f) for f in frames]).to(device)
+        emb = model(batch).cpu().numpy()
+        embeddings.append(emb)
 
-        with torch.no_grad():
-            # Process the entire batch through the model
-            batch_embeddings = model(batch_tensors.to('cuda')).cpu().numpy()
-        
-        all_embeddings.append(batch_embeddings)
+    embeddings = np.concatenate(embeddings, axis=0)
+    np.save(output_path, embeddings)
+    print(f"Saved embeddings to {output_path}")
 
-    embeddings = np.concatenate(all_embeddings, axis=0)
-    
-    video_name = os.path.splitext(os.path.basename(video_path))[0]
-    np_path = f"{output_folder}/{video_name}.npy"
-    np.save(np_path, embeddings)
 
-        
-   
+def process_crop_type(
+    files_list: Path,
+    output_dir: Path,
+    dino_path: Path,
+    index: int | None,
+    batch_size: int,
+    time_limit: int,
+):
+    files = load_file(files_list)
+    batches = [files[i : i + batch_size] for i in range(0, len(files), batch_size)]
+    output_dir.mkdir(parents=True, exist_ok=True)
+    model = get_dino_finetuned(dino_path)
+
+    start_time = time.time()
+    batch_indices = range(len(batches)) if index is None else [index]
+
+    for idx in batch_indices:
+        if idx >= len(batches):
+            print(f"Skipping index {idx}, only {len(batches)} batches.")
+            continue
+        print(
+            f"Processing batch {idx + 1}/{len(batches)} with {len(batches[idx])} files."
+        )
+
+        for video_file in batches[idx]:
+            video_path = Path(video_file)
+            npy_path = output_dir / f"{video_path.stem}.npy"
+            if npy_path.exists():
+                continue
+            if time.time() - start_time > time_limit:
+                print(f"Time limit of {time_limit}s reached.")
+                return
+            video_to_embeddings(video_path, npy_path, model)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Extract DINOv2 embeddings for face/hand crops."
+    )
+    parser.add_argument(
+        "--index",
+        type=int,
+        default=None,
+        help="Optional batch index (runs all if not set).",
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=50, help="Batch size for file processing."
+    )
+    parser.add_argument(
+        "--time-limit", type=int, default=3600, help="Time limit in seconds."
+    )
+
+    parser.add_argument(
+        "--face-crops-file-list",
+        type=Path,
+        default=Path("pose_face_crops/pose_face_crops.list.gz"),
+    )
+    parser.add_argument(
+        "--hand-crops-file-list",
+        type=Path,
+        default=Path("pose_hand_crops/pose_hand_crops.list.gz"),
+    )
+    parser.add_argument(
+        "--models-folder", type=Path, default=Path("models/SHuBERT_ckpts")
+    )
+    parser.add_argument(
+        "--output-folder-face", type=Path, default=Path("dinov2_face_embeddings")
+    )
+    parser.add_argument(
+        "--output-folder-hand", type=Path, default=Path("dinov2_hand_embeddings")
+    )
+    parser.add_argument("--write-output-list", type=bool, default=True)
+
+    args = parser.parse_args()
+
+    if not args.models_folder.exists():
+        print(f"Error: Models folder {args.models_folder} does not exist.")
+        return
+
+    print("\n=== Processing Face Crops ===")
+    face_dino = args.models_folder / "dinov2face.pth"
+    process_crop_type(
+        files_list=args.face_crops_file_list,
+        output_dir=args.output_folder_face,
+        dino_path=face_dino,
+        index=args.index,
+        batch_size=args.batch_size,
+        time_limit=args.time_limit,
+    )
+    if args.write_output_list:
+        dump_file_list(args.output_folder_face)
+
+    print("\n=== Processing Hand Crops ===")
+    hand_dino = args.models_folder / "dinov2hand.pth"
+    process_crop_type(
+        files_list=args.hand_crops_file_list,
+        output_dir=args.output_folder_hand,
+        dino_path=hand_dino,
+        index=args.index,
+        batch_size=args.batch_size,
+        time_limit=args.time_limit,
+    )
+    if args.write_output_list:
+        dump_file_list(args.output_folder_hand)
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--index', type=int, required=True,
-                        help='index of the sub_list to work with')
-    parser.add_argument('--time_limit', type=int, required=True,
-                        help='time limit in seconds')
-    parser.add_argument('--batch_size', type=int, required=True,
-                        help='number of videos to process in this batch')
-    parser.add_argument('--files_list', type=str, required=True,
-                        help='path to the files list file')
-    parser.add_argument('--output_folder', type=str, required=True,
-                        help='path to the output folder')
-    parser.add_argument('--dino_path', type=str, required=True,
-                        help='path to the dino model')
-    
-    args = parser.parse_args()
-    
-    start_time = time.time()
-    
-    index = args.index
-    time_limit = args.time_limit
-    batch_size_in = args.batch_size
-    files_list = args.files_list
-    output_folder = args.output_folder
-    fixed_list = load_file(files_list)    
-    global dino_path
-    dino_path = args.dino_path
-    
-    
-    video_batches = [fixed_list[i:i + batch_size_in] for i in range(0, len(fixed_list), batch_size_in)]
-    print(f"Total number of video batches: {len(video_batches)}")
-    
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-    model = get_dino_finetuned_downloaded(dino_path)
-    
-    for video_path in video_batches[index]:
-        clip_video_id = video_path.split('/')[-1].split('.')[0] 
-        
-        current_time = time.time()
-        if current_time - start_time > time_limit:
-            print("Time limit reached. Stopping execution.")
-            break
-        
-        video_name = os.path.splitext(os.path.basename(video_path))[0]
-        np_path = f"{output_folder}/{video_name}.npy"   
-           
-        if os.path.exists(np_path):
-            continue
-        else:
-            video_to_embeddings(video_path, output_folder, dino_path, batch_size=512)
+    main()

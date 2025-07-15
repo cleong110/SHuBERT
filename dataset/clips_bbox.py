@@ -1,6 +1,5 @@
 import argparse
-import gzip
-import pickle
+
 import time
 from pathlib import Path
 
@@ -9,31 +8,9 @@ import numpy as np
 from ultralytics import YOLO
 import logging
 
+from utils import load_file, is_string_in_file, dump_file_list
+
 logger = logging.getLogger(__name__)
-
-
-def load_file(filename: Path):
-    with gzip.open(filename, "rb") as f:
-        return pickle.load(f)
-
-
-def is_string_in_file(file_path: Path, target_string: str) -> bool:
-    """
-    Check if a given string exists in any line of the file.
-
-    Args:
-        file_path (Path): Path to the file.
-        target_string (str): String to search for.
-
-    Returns:
-        bool: True if the string is found, False otherwise.
-    """
-    try:
-        with file_path.open("r", encoding="utf-8") as f:
-            return any(target_string in line for line in f)
-    except FileNotFoundError:
-        logger.warning(f"File not found: {file_path}")
-    return False
 
 
 def get_optical_flow(images):
@@ -209,13 +186,13 @@ def main():
     parser.add_argument(
         "--files-list",
         type=Path,
-        default=Path("clips_bbox.list.gz"),
+        default=Path("raw_vids/raw_vids.list.gz"),
         help="Path to input file list.",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("output_clips"),
+        default=Path("bbox_clips"),
         help="Directory to save cropped clips.",
     )
     parser.add_argument(
@@ -230,6 +207,7 @@ def main():
         default=Path("models/yolov8n.pt"),
         help="Path to YOLO model.",
     )
+    parser.add_argument("--write-output-list", type=bool, default=True)
     args = parser.parse_args()
 
     files = load_file(args.files_list)
@@ -263,6 +241,8 @@ def main():
         crop_clip(video_path, args.problem_log, output_clip_path, args.yolo_model)
 
     print(f"Finished batch {args.index} in {time.time() - start_time:.2f}s.")
+    if args.write_output_list:
+        dump_file_list(args.output_dir)
 
 
 if __name__ == "__main__":

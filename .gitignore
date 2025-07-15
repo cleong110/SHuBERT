@@ -11,7 +11,19 @@ manifest_files/
 *.gz
 *.mp4
 
+
+*.log
+
 # model files
 *.pt
 *.pth
 *.task 
+
+# outputs
+*.json
+*.npy
+
+# stuff in the fairseq dir
+fairseq/
+*.so
+*.cpp
