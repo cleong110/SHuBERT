@@ -8,3 +8,10 @@ __pycache__/
 *.py[cod]
 *xiaodan*.*
 manifest_files/
+*.gz
+*.mp4
+
+# model files
+*.pt
+*.pth
+*.task 
